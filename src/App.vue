@@ -25,13 +25,21 @@ export default {
     const res = await fetch("/api/colors.json");
     const data = await res.json();
     this.colors = data.map((c, i) => ({ ...c, id: i + 1 }));
-    if (this.colors.length) this.selectedColor = this.colors[0];
-    if (this.selectedColor) this.updateBackground(this.selectedColor);
+    
+    // 检查URL hash并尝试定位到指定颜色
+    this.checkUrlHash();
+    
+    // 监听hash变化
+    window.addEventListener('hashchange', () => {
+      this.checkUrlHash();
+    });
   },
   methods: {
     handleSelectColor(color) {
       this.selectedColor = color;
       this.updateBackground(color);
+      // 更新URL hash
+      window.location.hash = color.Pinyin;
     },
     updateBackground(color) {
       // 获取接口RGB值
@@ -51,6 +59,20 @@ export default {
       };
 
       requestAnimationFrame(animate);
+    },
+    checkUrlHash() {
+      const hash = window.location.hash.substring(1); // 移除#
+      if (hash) {
+        // 根据拼音查找颜色
+        const color = this.colors.find(c => c.Pinyin === hash);
+        if (color) {
+          this.handleSelectColor(color);
+        }
+      } else if (this.colors.length) {
+        // 默认选中第一个颜色
+        this.selectedColor = this.colors[0];
+        this.updateBackground(this.selectedColor);
+      }
     }
   }
 };
