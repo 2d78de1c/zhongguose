@@ -1,7 +1,14 @@
 <template>
-  <div class="color-card" :style="{ backgroundColor: color.Hex }" @click="$emit('click')">
+
+  <div class="color-card"  @click="$emit('click')">
+    <div class="hex-value" ></div>
     <div class="header">
-      <span class="id">{{ color.id }}</span>
+        <span
+            class="id"
+            :style="{ color: color.Hex }"
+      >
+      {{ color.id }}
+      </span>
       <span class="name">{{ color.Name }}</span>
     </div>
 
@@ -12,9 +19,6 @@
       <div class="circle k" :style="{ '--percent': color.CMYK[3] + '%' }">K</div>
     </div>
 
-    <div class="hex-value">
-      <input type="text" :value="color.Hex" readonly />
-    </div>
   </div>
 </template>
 
@@ -44,7 +48,8 @@ export default {
   margin-bottom: 8px;
 }
 
-.id { font-weight: bold; }
+.id { font-weight: bold;
+}
 .name { flex: 1; }
 
 .cmyk {
@@ -64,6 +69,13 @@ export default {
   justify-content: center;
   font-size: 10px;
   color: #000;
+}
+
+/* 单独白线分隔 */
+.hex-value {
+  height: 1px;
+  width: 100%;
+  margin: 4px 0;
 }
 
 /* 圆圈填充比例，简单渐变 */
