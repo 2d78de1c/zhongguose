@@ -1,8 +1,10 @@
 <template>
   <aside v-if="color" class="color-box" :style="{ backgroundColor: color.Hex }">
     <div>
+      <div class="separator"></div>
     <!-- CMYK 圆环竖排 -->
     <div class="cmyk-column">
+
       <div class="ring" v-for="(value, idx) in color.CMYK" :key="idx">
         <svg viewBox="0 0 36 36">
           <circle class="bg" cx="18" cy="18" r="16"></circle>
@@ -44,6 +46,7 @@
         {{ color.Hex }}
       </div>
     </div>
+      <div class="separator"></div>
     </div>
     <!-- 新增右侧垂直标题，不影响原布局 -->
     <div class="title-vertical">
@@ -70,7 +73,7 @@ export default {
 <style scoped>
 .color-box {
   position: relative; /* 改成 relative */
-  width: 465px;
+  width: 255px;
   height: 507px;
   padding: 15px;
   border-radius: 6px;
@@ -104,14 +107,16 @@ export default {
 }
 
 .ring svg {
-  width: 36px;
-  height: 36px;
+  width: 50px;
+  height: 50px;
 }
 
 circle.bg {
   fill: none;
   stroke: #eee;
   stroke-width: 4;
+  width: 50px;
+  height: 50px;
 }
 
 circle.progress {
@@ -119,7 +124,10 @@ circle.progress {
   stroke-width: 4;
   stroke-linecap: round;
   stroke: currentColor;
-  transition: stroke-dasharray 0.3s ease;
+  transition: stroke-dasharray 1s ease;
+  transition-delay: 0.1s;       /* 添加延迟 */
+  transform: rotate(180deg);  /* 旋转 180 度 */
+  transform-origin: 50% 50%;  /* 设置旋转中心在圆心 */
 }
 
 .ring:nth-child(1) { color: cyan; }
@@ -129,13 +137,14 @@ circle.progress {
 
 .ring text.ring-text {
   font-size: 10px;
-  fill: #333;
+  fill: currentColor; /* 使用父元素 color */
   dominant-baseline: middle;
 }
 
 .label {
   margin-top: 2px;
   font-size: 10px;
+  color: #fff;
 }
 
 /* 单独白线分隔 */
@@ -167,6 +176,13 @@ circle.progress {
   padding: 2px 6px; /* 上下 2px，左右 6px */
   background-color: rgba(255,255,255,0.05);
   font-size: 14px;
+}
+.rgb-label {
+  color: #fff;
+}
+
+.rgb-value {
+  color: #fff;
 }
 /* HEX 气泡 */
 .hex-tooltip {
@@ -218,7 +234,7 @@ circle.progress {
   font-size: 60px;
   font-weight: bold;
   font-family: "CustomFont", sans-serif;
-
+  color: #fff;
   overflow: hidden; /* 隐藏超出的文字 */
   display: inline-block;
   white-space: nowrap; /* 避免换行 */
@@ -227,9 +243,10 @@ circle.progress {
 }
 
 .pinyin {
+  font-family: "adobe-garamond-pro-1", "adobe-garamond-pro-2", sans-serif;
   writing-mode: horizontal-tb; /* 拼音横向排列 */
   font-size: 14px;
-  color: #555;
+  color: #fff;
   margin-top: 4px;
 }
 </style>
