@@ -79,6 +79,12 @@ export default {
 </script>
 
 <style>
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent; /* 或者同背景色 */
+}
 #app {
   transition: background-color 0.5s linear; /* 可选，CSS 过渡辅助 */
   min-height: 100vh;
@@ -88,5 +94,6 @@ export default {
   display: flex;
   gap: 20px;
   padding: 20px;
+  box-sizing: border-box; /* 防止 padding 导致溢出 */
 }
 </style>
