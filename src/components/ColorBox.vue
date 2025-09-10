@@ -249,4 +249,40 @@ circle.progress {
   color: #fff;
   margin-top: 4px;
 }
+/* 手机端调整 */
+@media (max-width: 768px) {
+  .color-box {
+    position: fixed; /* 固定在视口上，即滚动页面时也保持位置不变 */
+    top: 50%;        /* 垂直居中显示（相对于视口） */
+    right: 20px;     /* 距离右边 20px */
+    transform: translateY(-50%); /* 精确垂直居中，通过自身高度偏移 50% */
+
+    width: 255px;    /* 固定宽度 */
+    height: 507px;   /* 固定高度 */
+    padding: 15px;   /* 内边距，内容不贴边 */
+    border-radius: 6px; /* 圆角边框 */
+    border: 1px solid #aaa; /* 边框颜色和粗细 */
+
+    color: #333;     /* 默认文本颜色 */
+
+    display: flex;           /* 使用 Flex 布局，便于内部纵向排列 */
+    flex-direction: column;  /* 垂直排列子元素 */
+    align-items: flex-start; /* 左对齐内容 */
+    justify-content: flex-start; /* 从顶部开始排列 */
+
+    box-sizing: border-box;  /* 包含 padding 和 border 在宽高内 */
+    z-index: 3001;           /* 层级最高，确保覆盖页面其他元素 */
+    transition: opacity 0.3s ease-in-out; /* 可选：渐变效果，用于显示/隐藏时 */
+
+    /* 背景麻布纹理叠加效果 */
+    background-image:
+        linear-gradient(45deg, rgba(0,0,0,0.05) 25%, transparent 25%),   /* 45 度浅黑线条，占据 25% */
+        linear-gradient(-45deg, rgba(0,0,0,0.05) 25%, transparent 25%),  /* -45 度浅黑线条 */
+        linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.05) 75%),   /* 45 度透明 + 浅黑线条，占据 75% */
+        linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.05) 75%);  /* -45 度透明 + 浅黑线条，占据 75% */
+
+    background-size: 20px 20px; /* 每个纹理块大小，形成重复格子 */
+    background-blend-mode: overlay; /* 将四个图层叠加在一起形成麻布质感 */
+  }
+}
 </style>
