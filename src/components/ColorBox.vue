@@ -1,5 +1,5 @@
 <template>
-  <aside v-if="color" class="color-box" :style="{ backgroundColor: color.Hex }">
+  <aside v-if="color" class="color-box">
     <div>
       <div class="separator"></div>
     <!-- CMYK 圆环竖排 -->

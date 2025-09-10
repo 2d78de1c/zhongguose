@@ -1,7 +1,7 @@
 <template>
 
   <div class="color-card"  @click="$emit('click')">
-    <div class="hex-value" ></div>
+    <div class="hex-value" :style="{ backgroundColor: color.Hex }"></div>
     <div class="header">
         <span
             class="id"
@@ -9,7 +9,8 @@
       >
       {{ color.id }}
       </span>
-      <span class="name">{{ color.Name }}</span>
+      <span class="name" >{{ color.Name }}</span>
+      <span class="pinyin" >{{ color.Pinyin.toUpperCase() }}</span>
     </div>
 
     <div class="cmyk">
@@ -17,6 +18,14 @@
       <div class="circle m" :style="{ '--percent': color.CMYK[1] + '%' }">M</div>
       <div class="circle y" :style="{ '--percent': color.CMYK[2] + '%' }">Y</div>
       <div class="circle k" :style="{ '--percent': color.CMYK[3] + '%' }">K</div>
+    </div>
+    <!-- 新增竖条 -->
+    <!-- CMYK 竖条 -->
+    <div class="cmyk-bars">
+      <div class="bar c" :style="{ '--percent': color.CMYK[0] + '%' }"></div>
+      <div class="bar m" :style="{ '--percent': color.CMYK[1] + '%' }"></div>
+      <div class="bar y" :style="{ '--percent': color.CMYK[2] + '%' }"></div>
+      <div class="bar k" :style="{ '--percent': color.CMYK[3] + '%' }"></div>
     </div>
 
   </div>
@@ -48,12 +57,22 @@ export default {
   margin-bottom: 8px;
 }
 
-.id { font-weight: bold;
+.id { font-weight: bold;}
+.name {
+  flex: 1;
+  writing-mode: vertical-rl;
+  color: #fff;
+  white-space: nowrap; /* 避免换行 */
 }
-.name { flex: 1; }
-
+.name, .pinyin {
+  flex: 1;
+  writing-mode: vertical-rl;
+  color: #fff;
+  white-space: nowrap; /* 避免换行 */
+}
 .cmyk {
   display: flex;
+  flex-direction: column; /* 垂直排列 */
   gap: 4px;
   margin-bottom: 8px;
 }
@@ -73,9 +92,37 @@ export default {
 
 /* 单独白线分隔 */
 .hex-value {
-  height: 1px;
+  height: 4px;       /* 线条高度加粗 */
   width: 100%;
   margin: 4px 0;
+}
+
+/* CMYK 竖条 */
+.cmyk-bars {
+  display: flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 100px; /* 可调整整体高度 */
+  align-items: flex-end; /* 保证条从底部开始 */
+}
+
+.bar {
+  width: 1px;
+  height: 100%;       /* 填充父容器高度 */
+  background-color: #eee; /* 浅灰色背景 */
+  border-radius: 2px 2px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.bar::after {
+  content: '';
+  position: absolute;
+  bottom: 100;
+  left: 0;
+  width: 100%;
+  height: var(--percent); /* 高度百分比 */
+  background-color: #fff; /* 白色填充 */
 }
 
 /* 圆圈填充比例，简单渐变 */
