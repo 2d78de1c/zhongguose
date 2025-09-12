@@ -1,7 +1,11 @@
 <template>
   <div class="color-card" @click="$emit('click')">
+    <!-- HEX 分隔线 -->
     <div class="hex-value" :style="{ backgroundColor: color.Hex }"></div>
-
+    <!-- HEX 文本 -->
+    <div class="hex-text">
+      {{ color.Hex }}
+    </div>
     <!-- 顶部信息 -->
     <div class="header">
       <span class="id" :style="{ color: color.Hex }">{{ color.id }}</span>
@@ -27,6 +31,7 @@
       <div class="bar k" :style="{ '--percent': color.CMYK[3] + '%' }"></div>
     </div>
   </div>
+
 </template>
 
 <script>
@@ -39,49 +44,79 @@ export default {
 </script>
 
 <style scoped>
+/* 父容器 grid 布局 */
+:global(.color-card-grid) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 90px); /* 固定宽度 */
+  gap: 10px;
+  justify-content: center;
+}
+
 .color-card {
-  width: calc((100% - 6 * 10px) / 7); /* 每排 7 个，10px 间隙 */
-  min-width: 50px;                     /* 最小宽度 50px */
-  height: 278px;
-  margin: 5px;
+  width: 90px;       /* 固定宽度 */
+  height: 278px;      /* 固定高度 */
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 6px;
   box-sizing: border-box;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 顶部内容在上，CMYK竖条在底部 */
+}
+
+/* HEX 分隔线 */
+.hex-value {
+  height: 8px;
+  width: 100%;
+  margin-bottom: 4px;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* HEX 文本 */
+.hex-text {
+  font-size: 12px;
+  margin-bottom: 6px;
+  text-align: left;
+  width: 100%;
+  color: #fff;
+
 }
 
 /* 顶部信息布局 */
 .header {
   display: flex;
-  justify-content: space-between; /* 三列均分 */
+  justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 8px;
-  position: relative;
+  height: 40px;       /* 固定高度 */
+  margin-bottom: 6px;
   gap: 8px;
 }
-/* 左列 ID */
-.header  {
-  flex: 0 0 30px; /* 固定宽度 */
+
+.id {
+  flex: 0 0 30px;
   display: flex;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-start; /* 左对齐 */
+  font-weight: bold;
 }
 
-/* name + pinyin 右上角竖直排列 */
 .name-block {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: center;   /* 右对齐内容 */
+  width: 500px;             /* 固定宽度保证全局统一 */
 }
-.id { font-weight: bold;}
+
 .name {
   writing-mode: vertical-rl;
   white-space: nowrap;
   color: #fff;
   font-weight: bold;
-  margin-bottom: 3px; /* 给 pinyin 留出空行 */
+  margin-bottom: 10px;     /* Name 和 Pinyin 间距 */
 }
+
 .pinyin {
   writing-mode: vertical-rl;
   white-space: nowrap;
@@ -90,15 +125,19 @@ export default {
   letter-spacing: 1px;
   line-height: 1.2;
 }
+
+/* CMYK 圆圈组 */
 .cmyk {
   display: flex;
-  flex-direction: column; /* 垂直排列 */
+  flex-direction: column;
   gap: 4px;
-  margin-bottom: 8px;
-  align-items: flex-start; /* 避免拉伸 */
+  margin-bottom: 6px;  /* 固定间距 */
+  height: 70px;        /* 固定高度 */
+  width: 50px;         /* 与圆环宽度一致 */
+  align-items: flex-start;
+  justify-content: flex-start; /* 左对齐 */
 }
 
-/* 圆圈样式 */
 .circle {
   width: 16px;
   height: 16px;
@@ -110,27 +149,31 @@ export default {
   justify-content: center;
   font-size: 10px;
   color: #000;
+  overflow: hidden;
 }
 
-/* 单独白线分隔 */
-.hex-value {
-  height: 4px;       /* 线条高度加粗 */
-  width: 100%;
-  margin: 4px 0;
+.circle::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(currentColor var(--percent), transparent 0);
+  opacity: 0.5;
 }
 
 /* CMYK 竖条 */
 .cmyk-bars {
   display: flex;
   gap: 2px;
-  height: 100px; /* 可调整整体高度 */
-  align-items: flex-end; /* 保证条从底部开始 */
+  height: 100px;   /* 固定高度 */
+  align-items: flex-start;
+  justify-content: flex-start; /* 左对齐 */
 }
 
 .bar {
-  width: 1px;
-  height: 100%;       /* 填充父容器高度 */
-  background-color: #eee; /* 浅灰色背景 */
+  width: 2px;
+  height: 100%;
+  background-color: #aaaaaa;
   border-radius: 2px 2px 0 0;
   position: relative;
   overflow: hidden;
@@ -139,24 +182,15 @@ export default {
 .bar::after {
   content: '';
   position: absolute;
-  bottom: 100;
+  bottom: 0;
   left: 0;
   width: 100%;
-  height: var(--percent); /* 高度百分比 */
-  background-color: #fff; /* 白色填充 */
+  height: var(--percent);
+  background-color: #fff;
+  opacity: 0.7;
 }
 
-/* 圆圈填充比例，简单渐变 */
-.circle::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background-color: currentColor;
-  clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% var(--percent), 50% var(--percent));
-  opacity: 0.5;
-}
-
+/* 颜色映射 */
 .c { color: cyan; }
 .m { color: magenta; }
 .y { color: yellow; }
