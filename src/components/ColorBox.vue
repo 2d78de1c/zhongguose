@@ -256,7 +256,7 @@ circle.progress {
     width: 90%;            /* 自适应屏幕宽度 */
     max-width: 255px;      /* 最大宽度保持原设计 */
     height: 60vh;          /* 高度占屏幕60% */
-    max-height: 507px;     /* 保持原始最大高度 */
+    max-height: 40vh;     /* 保持原始最大高度 */
     z-index: 1000;
     box-sizing: border-box;
     padding: 10px;         /* 内边距可微调 */
