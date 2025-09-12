@@ -1,6 +1,6 @@
 <template>
   <header>
-    <h1>Nippon Colors</h1>
+    <h1>ZhongGuoSe Colors</h1>
   </header>
 </template>
 
