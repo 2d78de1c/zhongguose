@@ -200,4 +200,61 @@ export default {
   width: 100%;
   text-align: center;
 }
+/* 手机端缩放 ColorCard */
+@media (max-width: 768px) {
+  .color-card {
+    width: 70px;        /* 缩小宽度 */
+    height: 220px;      /* 缩小高度 */
+    padding: 8px;       /* 内边距缩小 */
+  }
+
+  /* HEX 分隔线和文本 */
+  .hex-value {
+    height: 6px;
+    margin-bottom: 3px;
+  }
+  .hex-text {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  /* 顶部信息布局 */
+  .header {
+    height: 32px;
+    margin-bottom: 4px;
+    gap: 6px;
+  }
+  .id {
+    flex: 0 0 24px;
+  }
+  .name-block {
+    width: 350px;      /* 根据比例缩小 */
+  }
+  .name {
+    margin-bottom: 6px;
+    font-size: 14px;   /* 缩小字体 */
+  }
+  .pinyin {
+    font-size: 10px;
+  }
+
+  /* CMYK 圆圈组 */
+  .cmyk {
+    height: 55px;      /* 缩小高度 */
+    width: 40px;       /* 缩小宽度 */
+  }
+  .circle {
+    width: 12px;
+    height: 12px;
+    font-size: 8px;
+  }
+
+  /* CMYK 竖条 */
+  .cmyk-bars {
+    height: 80px;      /* 缩小高度 */
+  }
+  .bar {
+    width: 1.5px;      /* 缩小宽度 */
+  }
+}
 </style>

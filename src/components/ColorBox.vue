@@ -243,4 +243,55 @@ circle.progress {
   color: #fff;
   margin-top: 4px;
 }
+
+/* 手机端 ColorBox 固定在屏幕顶部 */
+/* 手机端 ColorBox 自适应高度 */
+/* 手机端 ColorBox 自适应高度，降低到屏幕 60% */
+@media (max-width: 768px) {
+  .color-box {
+    position: fixed;       /* 固定在屏幕 */
+    top: 2vh;              /* 距离顶部少量留白 */
+    left: 50%;             /* 水平居中 */
+    transform: translateX(-50%);
+    width: 90%;            /* 自适应屏幕宽度 */
+    max-width: 255px;      /* 最大宽度保持原设计 */
+    height: 60vh;          /* 高度占屏幕60% */
+    max-height: 507px;     /* 保持原始最大高度 */
+    z-index: 1000;
+    box-sizing: border-box;
+    padding: 10px;         /* 内边距可微调 */
+    overflow: hidden;      /* 防止内容溢出 */
+  }
+
+  /* 防止下方 ColorContainer 被遮挡 */
+  .main-layout {
+    padding-top: 62vh;     /* ColorBox 高度 + 顶部偏移 */
+  }
+
+  /* CMYK 圆环自适应高度 */
+  .cmyk-column .ring svg {
+    width: 40px;           /* 缩小圆环，适应较低高度 */
+    height: 40px;
+  }
+
+  /* RGB 列字体缩小 */
+  .rgb-item {
+    font-size: 12px;
+    padding: 1px 4px;
+  }
+
+  /* HEX 气泡缩小 */
+  .hex-tooltip {
+    font-size: 12px;
+    padding: 2px 6px;
+  }
+
+  /* Title 文字缩小 */
+  .title-vertical .chinese {
+    font-size: 40px;
+  }
+  .title-vertical .pinyin {
+    font-size: 12px;
+  }
+}
 </style>

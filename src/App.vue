@@ -87,8 +87,8 @@ html, body {
     flex-direction: column-reverse; /* 上下排列 */
     gap: 60px;                      /* 增加上下间距 */
     align-items: center;            /* 水平居中 */
-    width: 430px;
-    height: 932px;
+    width: 100%;
+    width: 100%;
     overflow-y: auto;               /* 内容超出可以滚动 */
   }
 }

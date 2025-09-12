@@ -38,13 +38,15 @@ export default {
   .color-container {
     display: flex;
     flex-wrap: nowrap;          /* 一行展示 */
-    overflow-x: hidden;         /* 超出部分隐藏 */
-    overflow-x: auto;           /* 允许横向滑动 */
+    overflow-x: auto;            /* 允许水平滑动 */
+    overflow-y: hidden;          /* 禁止垂直滚动 */
     gap: 10px;
     padding: 0 10px;            /* 给两边留白 */
     scroll-snap-type: x mandatory;  /* 吸附滚动 */
     -webkit-overflow-scrolling: touch; /* 平滑滑动 */
+    align-items: flex-end;
     justify-content: center;         /* 卡片始终在屏幕中显示 */
+    height: calc(98vh - 2vh);                /* 容器高度，可根据卡片高度调整 */
   }
 
   /* 每个卡片启用 snap 对齐 */
