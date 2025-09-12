@@ -1,5 +1,6 @@
 <template>
-  <aside v-if="color" class="color-box">
+  <aside v-if="color" class="color-box" :style="{
+    backgroundColor: `rgb(${color.RGB[0]}, ${color.RGB[1]}, ${color.RGB[2]})`}">
     <div>
       <div class="separator"></div>
       <!-- CMYK 圆环竖排 -->
@@ -102,6 +103,8 @@ export default {
   align-items: flex-start;
   justify-content: flex-start;
   box-sizing: border-box;
+  /* 使用动态背景色，不显示纹理 */
+  background-image: none;
 }
 
 /* CMYK 圆环竖排 */

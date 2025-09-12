@@ -73,6 +73,31 @@ html, body {
 #app {
   transition: background-color 0.5s linear;
   min-height: 100vh;
+
+  /* 麻布纹理叠加 */
+  background-image:
+    /* 柔和斜纹（模拟织物经纬） */
+      linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px),
+        /* 模拟织物绒毛 / 不规则阴影 */
+      radial-gradient(circle at 10% 20%, rgba(0,0,0,0.02) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(0,0,0,0.015) 0%, transparent 40%),
+      radial-gradient(circle at 50% 60%, rgba(0,0,0,0.01) 0%, transparent 50%);
+  background-size:
+      30px 30px,           /* 织物网格 */
+      30px 30px,
+      100px 100px,         /* 柔和阴影斑块 */
+      100px 100px,
+      150px 150px;
+  background-position:
+      0 0,
+      0 0,
+      0 0,
+      100px 100px,
+      50px 50px;
+  background-blend-mode: overlay, overlay, multiply, multiply, multiply;
+  border-radius: 8px; /* 圆角模拟布料褶皱 */
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* 微弱投影，增加立体感 */
 }
 
 .main-layout {
