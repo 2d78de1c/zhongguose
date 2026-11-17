@@ -56,7 +56,7 @@ git push origin v1.0.0
 
 测试和构建成功后才创建自动版本标签；不会向 `master` 回写版本提交。不同提交可以并行构建，版本按成功占号的顺序分配；同版本冲突会重新计算，不会强推或覆盖标签。已完成发布的同提交重跑不新增版本。若自动发布后再给该提交打新的手动版本标签，则按新标签额外发布一次。
 
-每个 Release 包含：
+每个版本 Release 包含：
 
 - `zhongguose-vX.Y.Z.zip`
 - `zhongguose-vX.Y.Z.tar.gz`
@@ -65,3 +65,32 @@ git push origin v1.0.0
 两个归档均直接包含可部署的静态网站文件，使用相对资源路径，适合部署到域名根路径或子目录。包内 `release.json` 记录版本与源提交；校验和可用 `sha256sum -c SHA256SUMS.txt` 验证。附件上传完整后才公开 Release；较早提交的并发构建不会替换当前 `master` 的 latest 发布。
 
 工作流也可在 Actions 页面手动运行（选择 `master`）。如仓库或组织规则禁止自动创建标签/Release，需要允许该工作流的 `contents: write` 权限。
+
+
+## 服务器固定下载入口
+
+每次版本发布成功后，独立的 `latest` 任务会读取当前已发布的稳定版本，验证原包校验和，再更新名为 `latest` 的滚动 Release。历史版本保留；`latest` 不参与版本递增计数。
+
+现有服务器拉取脚本使用以下变量：
+
+```sh
+BASE_URL="https://github.com/2d78de1c/zhongguose/releases/download/latest"
+ZIP_FILE="dist-vlatest.zip"
+SHA_FILE="$ZIP_FILE.sha256"
+EXTRACT_DIR="/data/app/zhongguose/"
+```
+
+固定附件为 `dist-vlatest.zip` 和 `dist-vlatest.zip.sha256`。ZIP 布局为：
+
+```text
+dist/
+  index.html
+  assets/
+  release.json
+```
+
+校验文件采用标准格式：`<SHA256>  dist-vlatest.zip`。包内 `dist/release.json` 保留实际版本和提交，因此服务器原有的 `dist/index.html` 检查及解压到 `$EXTRACT_DIR` 的方式可直接使用。
+
+`latest` 更新任务串行执行，并读取当前稳定版本，避免旧任务覆盖新版本；相同文件会跳过上传。仅滚动标签 `latest` 会移动，稳定版本标签不改动。该滚动 Release 设置 `make_latest: false`，因此 GitHub 的“Latest”标记仍指向实际的稳定版本。
+
+GitHub 不支持两个附件同时原子替换。工作流先替换 ZIP、最后更新 SHA256；切换时若下载失败或校验不一致，服务器应停止替换现有目录并重新下载两个文件后重试。不要在校验通过前删除正在运行的 `dist/`。

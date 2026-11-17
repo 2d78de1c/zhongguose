@@ -87,7 +87,7 @@ async function listReleases(client, repoPath) {
   }
 }
 
-async function findRelease(client, repoPath, tag) {
+export async function findRelease(client, repoPath, tag) {
   try { return await client.request('GET', `${repoPath}/releases/tags/${encodeURIComponent(tag)}`); }
   catch (error) { if (error.status !== 404) throw error; }
   // The by-tag endpoint only guarantees published releases. Authenticated list
