@@ -1,182 +1,219 @@
 <template>
-  <div class="color-card" @click="$emit('click')">
-    <!-- HEX 分隔线 -->
-    <div class="hex-value" :style="{ backgroundColor: color.Hex }"></div>
-    <!-- HEX 文本 -->
-    <div class="hex-text">
-      {{ color.Hex }}
-    </div>
-    <!-- 顶部信息 -->
-    <div class="header">
-      <span class="id" :style="{ color: color.Hex }">{{ color.id }}</span>
-      <div class="name-block">
+  <button
+      type="button"
+      class="color-card"
+      :class="{ 'is-selected': selected }"
+      :aria-pressed="selected"
+      :aria-label="`选择${color.Name}，${color.Pinyin}，${color.Hex}`"
+      @click="$emit('click')"
+  >
+    <span class="hex-value" :style="{ backgroundColor: color.Hex }" aria-hidden="true"></span>
+    <span class="hex-text">{{ color.Hex }}</span>
+    <span class="card-body">
+      <span class="color-meta" aria-hidden="true">
+        <span class="id">{{ color.id }}</span>
+        <span class="cmyk">
+          <span
+              v-for="(label, index) in ['C', 'M', 'Y', 'K']"
+              :key="label"
+              :class="['circle', label.toLowerCase()]"
+              :style="{ '--percent': `${color.CMYK[index]}%` }"
+          ><span class="channel-label">{{ label }}</span></span>
+        </span>
+        <span class="cmyk-bars">
+          <span
+              v-for="(label, index) in ['C', 'M', 'Y', 'K']"
+              :key="label"
+              class="bar"
+              :style="{ '--percent': `${color.CMYK[index]}%` }"
+          ></span>
+        </span>
+      </span>
+      <span class="name-block">
         <span class="name">{{ color.Name }}</span>
         <span class="pinyin">{{ color.Pinyin.toUpperCase() }}</span>
-      </div>
-    </div>
-
-    <!-- 中间 CMYK 圆圈 -->
-    <div class="cmyk">
-      <div class="circle c" :style="{ '--percent': color.CMYK[0] + '%' }">C</div>
-      <div class="circle m" :style="{ '--percent': color.CMYK[1] + '%' }">M</div>
-      <div class="circle y" :style="{ '--percent': color.CMYK[2] + '%' }">Y</div>
-      <div class="circle k" :style="{ '--percent': color.CMYK[3] + '%' }">K</div>
-    </div>
-
-    <!-- 中间 CMYK 竖条 -->
-    <div class="cmyk-bars">
-      <div class="bar c" :style="{ '--percent': color.CMYK[0] + '%' }"></div>
-      <div class="bar m" :style="{ '--percent': color.CMYK[1] + '%' }"></div>
-      <div class="bar y" :style="{ '--percent': color.CMYK[2] + '%' }"></div>
-      <div class="bar k" :style="{ '--percent': color.CMYK[3] + '%' }"></div>
-    </div>
-  </div>
-
+      </span>
+    </span>
+    <span v-if="selected" class="selected-mark" aria-hidden="true">✓</span>
+  </button>
 </template>
 
 <script>
 export default {
-  name: "ColorCard",
+  name: 'ColorCard',
+  emits: ['click'],
   props: {
-    color: { type: Object, required: true }
-  }
+    color: { type: Object, required: true },
+    selected: { type: Boolean, default: false },
+  },
 };
 </script>
 
 <style scoped>
-/* 父容器 grid 布局 */
-:global(.color-card-grid) {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 90px); /* 固定宽度 */
-  gap: 10px;
-  justify-content: center;
-}
-
 .color-card {
-  width: 90px;       /* 固定宽度 */
-  height: 278px;      /* 固定高度 */
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-  cursor: pointer;
+  appearance: none;
+  position: relative;
   display: flex;
+  flex: 0 0 90px;
   flex-direction: column;
-  justify-content: space-between; /* 顶部内容在上，CMYK竖条在底部 */
+  width: 90px;
+  height: 278px;
+  min-width: 0;
+  padding: 10px;
+  box-sizing: border-box;
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-color: color-mix(in srgb, var(--color-ink, #fff) 32%, transparent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-ink, #fff);
+  font: inherit;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* HEX 分隔线 */
+.color-card.is-selected {
+  border-color: var(--color-ink, #fff);
+  box-shadow: inset 0 0 0 1px var(--color-ink, #fff);
+}
+
+.color-card:focus-visible {
+  outline: 2px solid var(--color-ink, #fff);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .color-card:hover {
+    border-color: var(--color-ink, #fff);
+    background-color: color-mix(in srgb, var(--color-ink, #fff) 5%, transparent);
+  }
+}
+
 .hex-value {
-  height: 8px;
+  display: block;
+  flex: 0 0 8px;
   width: 100%;
   margin-bottom: 4px;
   border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 30%);
 }
 
-/* HEX 文本 */
 .hex-text {
-  font-size: 12px;
-  margin-bottom: 6px;
-  text-align: left;
-  width: 100%;
-  color: #fff;
-
+  display: block;
+  margin-bottom: 10px;
+  font-family: 'SFMono-Regular', Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
-/* 顶部信息布局 */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  height: 40px;       /* 固定高度 */
-  margin-bottom: 6px;
+.card-body {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
   gap: 8px;
+  flex: 1;
+  min-height: 0;
+}
+
+.color-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
 }
 
 .id {
-  flex: 0 0 30px;
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-start; /* 左对齐 */
-  font-weight: bold;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
 }
 
 .name-block {
   display: flex;
-  flex-direction: column;
-  align-items: center;   /* 右对齐内容 */
-  width: 500px;             /* 固定宽度保证全局统一 */
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+}
+
+.name,
+.pinyin {
+  display: block;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  color: var(--color-ink, #fff);
 }
 
 .name {
-  writing-mode: vertical-rl;
-  white-space: nowrap;
-  color: #fff;
-  font-weight: bold;
-  margin-bottom: 10px;     /* Name 和 Pinyin 间距 */
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 1px;
 }
 
 .pinyin {
-  writing-mode: vertical-rl;
-  white-space: nowrap;
-  color: #fff;
-  font-size: 12px;
-  letter-spacing: 1px;
+  font-size: 10px;
   line-height: 1.2;
+  letter-spacing: 0.5px;
 }
 
-/* CMYK 圆圈组 */
 .cmyk {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin-bottom: 6px;  /* 固定间距 */
-  height: 70px;        /* 固定高度 */
-  width: 50px;         /* 与圆环宽度一致 */
-  align-items: flex-start;
-  justify-content: flex-start; /* 左对齐 */
 }
 
 .circle {
+  position: relative;
+  display: grid;
+  place-items: center;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
-  background: #ddd;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  color: #000;
+  flex-shrink: 0;
   overflow: hidden;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 24%);
 }
 
-.circle::after {
+.circle::before {
   content: '';
   position: absolute;
   inset: 0;
-  border-radius: 50%;
+  border-radius: inherit;
   background: conic-gradient(currentColor var(--percent), transparent 0);
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
-/* CMYK 竖条 */
+.channel-label {
+  position: relative;
+  color: var(--color-ink, #fff);
+  font-size: 8px;
+  line-height: 1;
+}
+
+.c { color: cyan; }
+.m { color: magenta; }
+.y { color: yellow; }
+.k { color: black; }
+
 .cmyk-bars {
   display: flex;
+  align-items: flex-end;
   gap: 2px;
-  height: 100px;   /* 固定高度 */
-  align-items: flex-start;
-  justify-content: flex-start; /* 左对齐 */
+  height: 90px;
 }
 
 .bar {
+  position: relative;
+  display: block;
   width: 2px;
   height: 100%;
-  background-color: #aaaaaa;
-  border-radius: 2px 2px 0 0;
-  position: relative;
   overflow: hidden;
+  border-radius: 2px 2px 0 0;
+  background: rgb(128 128 128 / 45%);
 }
 
 .bar::after {
@@ -186,75 +223,54 @@ export default {
   left: 0;
   width: 100%;
   height: var(--percent);
-  background-color: #fff;
+  background: var(--color-ink, #fff);
   opacity: 0.7;
 }
 
-/* 颜色映射 */
-.c { color: cyan; }
-.m { color: magenta; }
-.y { color: yellow; }
-.k { color: black; }
-
-.hex-value input {
-  width: 100%;
-  text-align: center;
+.selected-mark {
+  position: absolute;
+  right: 7px;
+  bottom: 6px;
+  font-size: 12px;
+  line-height: 1;
 }
-/* 手机端缩放 ColorCard */
+
 @media (max-width: 768px) {
   .color-card {
-    width: 70px;        /* 缩小宽度 */
-    height: 220px;      /* 缩小高度 */
-    padding: 8px;       /* 内边距缩小 */
+    flex-basis: 70px;
+    width: 70px;
+    height: 240px;
+    padding: 7px;
   }
 
-  /* HEX 分隔线和文本 */
   .hex-value {
-    height: 6px;
+    flex-basis: 6px;
     margin-bottom: 3px;
   }
+
   .hex-text {
+    margin-bottom: 8px;
     font-size: 10px;
-    margin-bottom: 4px;
   }
 
-  /* 顶部信息布局 */
-  .header {
-    height: 32px;
-    margin-bottom: 4px;
+  .card-body {
+    grid-template-columns: 14px minmax(0, 1fr);
     gap: 6px;
   }
-  .id {
-    flex: 0 0 24px;
-  }
-  .name-block {
-    width: 350px;      /* 根据比例缩小 */
-  }
-  .name {
-    margin-bottom: 6px;
-    font-size: 14px;   /* 缩小字体 */
-  }
-  .pinyin {
-    font-size: 10px;
-  }
 
-  /* CMYK 圆圈组 */
-  .cmyk {
-    height: 55px;      /* 缩小高度 */
-    width: 40px;       /* 缩小宽度 */
-  }
-  .circle {
-    width: 12px;
-    height: 12px;
-    font-size: 8px;
-  }
+  .color-meta { gap: 9px; }
+  .id { font-size: 9px; line-height: 14px; }
+  .name-block { gap: 4px; }
+  .name { font-size: 14px; }
+  .pinyin { font-size: 9px; letter-spacing: 0.4px; }
+  .cmyk { gap: 3px; }
+  .circle { width: 12px; height: 12px; }
+  .channel-label { font-size: 7px; }
+  .cmyk-bars { gap: 2px; height: 70px; }
+  .bar { width: 1.5px; }
+}
 
-  /* CMYK 竖条 */
-  .cmyk-bars {
-    height: 80px;      /* 缩小高度 */
-  }
-  .bar {
-    width: 1.5px;      /* 缩小宽度 */
-  }
+@media (prefers-reduced-motion: reduce) {
+  .color-card { transition: none; }
 }
 </style>

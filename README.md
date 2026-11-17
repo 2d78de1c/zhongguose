@@ -1,5 +1,34 @@
-# Vue 3 + TypeScript + Vite
+# 中国色
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+使用 Vue 3 与 Vite 展示 526 种中国传统颜色，保留整页随选色变化的背景、麻布纹理、竖排色名与 CMYK 圆环。
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## 开发与构建
+
+建议使用 Node.js 22.12 或更高版本。
+
+```sh
+npm ci
+npm run dev
+node --test tests/*.test.mjs
+npm run build
+```
+
+构建产物位于 `dist/`，可部署到静态网站托管服务。颜色数据和字体均进入构建产物，运行时不依赖独立 API 服务。
+
+## 功能
+
+- 浏览全部颜色，支持中文名、拼音、HEX、RGB 搜索与色系组合筛选。
+- 随机选色、选中状态、键盘操作，以及 `/` 聚焦搜索。
+- 桌面密集色卡与右侧详情；手机上方详情与下方横向胶片色卡。
+- 复制 HEX、RGB、CMYK 和当前颜色链接；自动复制失败时提供手动复制。
+- 唯一颜色分享标识，同时兼容旧的拼音链接。
+
+## 数据与显示
+
+保留 `api/colors.json` 的全部原始记录。页面以原始 HEX 为依据计算展示用 RGB，保证色卡、背景与详情一致。重复拼音的颜色使用 `拼音-hex` 标识，旧的重复拼音链接仍定位首条记录。文字根据背景亮度选择黑色或白色。
+
+CMYK 保留原始数据，不表示经过 ICC 配置认证；屏幕颜色与实际印刷可能存在差异。色系按屏幕 RGB 色值分类。
+
+## 验证
+
+20 项自动检查覆盖颜色数据、分享标识、文字对比度、搜索筛选、复制成功与失败处理。生产构建通过。自动检查不代替浏览器布局及真实剪贴板权限的端到端验证。
