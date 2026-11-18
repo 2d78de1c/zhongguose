@@ -52,7 +52,7 @@
       </div>
 
       <div class="title-vertical">
-        <h2 class="chinese">{{ color.Name }}</h2>
+        <ColorName as="h2" class="chinese" :text="color.Name" />
         <span class="pinyin">{{ color.Pinyin.toUpperCase() }}</span>
       </div>
     </div>
@@ -78,8 +78,11 @@
 </template>
 
 <script>
+import ColorName from './ColorName.vue';
+
 export default {
   name: 'ColorBox',
+  components: { ColorName },
   props: {
     color: { type: Object, default: null },
   },
@@ -220,41 +223,32 @@ circle.progress {
 }
 
 .title-vertical {
-  justify-self: end;
+  justify-self: stretch;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
   text-align: center;
 }
 
-@font-face {
-  font-family: 'CustomFont';
-  src: url('/api/fonts.woff2') format('woff2');
-  font-display: swap;
-}
-
 .chinese {
-  writing-mode: vertical-rl;
-  margin: 0;
-  font-size: 60px;
-  font-weight: bold;
-  font-family: 'CustomFont', sans-serif;
-  line-height: 1.2;
-  color: inherit;
-  display: inline-block;
-  white-space: nowrap;
+  font-size: 56px;
+  /* Five equal cells plus four gaps keep every name and pinyin on one axis. */
+  min-height: 5.48em;
 }
 
 .pinyin {
-  font-family: 'adobe-garamond-pro-1', 'adobe-garamond-pro-2', sans-serif;
+  font-family: Arial, 'Helvetica Neue', sans-serif;
   writing-mode: horizontal-tb;
   font-size: 14px;
   line-height: 1.4;
   color: inherit;
   max-width: 100%;
+  min-height: 2.8em;
   overflow-wrap: anywhere;
-  margin-top: 4px;
+  margin-top: 12px;
 }
 
 .panel-actions {
@@ -331,7 +325,7 @@ circle.progress {
   }
 
   .chinese {
-    font-size: 40px;
+    font-size: 42px;
   }
 
   .pinyin {

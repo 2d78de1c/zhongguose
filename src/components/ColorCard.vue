@@ -30,7 +30,7 @@
         </span>
       </span>
       <span class="name-block">
-        <span class="name">{{ color.Name }}</span>
+        <ColorName class="name" :text="color.Name" />
         <span class="pinyin">{{ color.Pinyin.toUpperCase() }}</span>
       </span>
     </span>
@@ -39,8 +39,11 @@
 </template>
 
 <script>
+import ColorName from './ColorName.vue';
+
 export default {
   name: 'ColorCard',
+  components: { ColorName },
   emits: ['click'],
   props: {
     color: { type: Object, required: true },
@@ -132,14 +135,14 @@ export default {
 }
 
 .name-block {
-  display: flex;
+  display: grid;
+  grid-template-columns: 18px 12px;
   justify-content: flex-end;
-  align-items: flex-start;
+  align-items: start;
   gap: 5px;
   min-width: 0;
 }
 
-.name,
 .pinyin {
   display: block;
   writing-mode: vertical-rl;
@@ -148,13 +151,11 @@ export default {
 }
 
 .name {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: 1px;
+  font-size: 18px;
 }
 
 .pinyin {
+  font-family: Arial, 'Helvetica Neue', sans-serif;
   font-size: 10px;
   line-height: 1.2;
   letter-spacing: 0.5px;
@@ -260,8 +261,8 @@ export default {
 
   .color-meta { gap: 9px; }
   .id { font-size: 9px; line-height: 14px; }
-  .name-block { gap: 4px; }
-  .name { font-size: 14px; }
+  .name-block { grid-template-columns: 16px 11px; gap: 4px; }
+  .name { font-size: 16px; }
   .pinyin { font-size: 9px; letter-spacing: 0.4px; }
   .cmyk { gap: 3px; }
   .circle { width: 12px; height: 12px; }
