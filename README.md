@@ -97,4 +97,34 @@ dist/
 
 `latest` 更新任务串行执行，并读取当前稳定版本，避免旧任务覆盖新版本；相同文件会跳过上传。仅滚动标签 `latest` 会移动，稳定版本标签不改动。该滚动 Release 设置 `make_latest: false`，因此 GitHub 的“Latest”标记仍指向实际的稳定版本。
 
+服务器 ZIP 的文件修改时间使用对应稳定版本的发布时间，并写入 UTC 时间戳，避免不同版本的 `index.html` 恰好同大小、同时间，导致 Nginx 等服务器误用旧的缓存验证标识。相同版本的发布时间不变，重打包仍能生成一致的 ZIP 和校验和。
+
 GitHub 不支持两个附件同时原子替换。工作流先替换 ZIP、最后更新 SHA256；切换时若下载失败或校验不一致，服务器应停止替换现有目录并重新下载两个文件后重试。不要在校验通过前删除正在运行的 `dist/`。
+
+### 服务器更新脚本
+
+使用仓库中的 `scripts/pull-latest.py` 替换旧的下载脚本，需要 Linux、Python 3 和 curl。默认使用当前仓库 `2d78de1c/zhongguose` 的固定 `latest` 入口，部署到 `/data/app/zhongguose/dist`：
+
+```sh
+# 将下载好的 pull-latest.py 放在服务器脚本目录，再执行。
+python3 pull-latest.py
+
+# 若需要 SOCKS5 代理，显式传入原来的代理值；留空时直接连接。
+PROXY="127.0.0.1:1080" EXTRACT_DIR="/data/app/zhongguose" python3 pull-latest.py
+```
+
+如果原来的 `PROXY` 只是 shell 局部变量，使用 `PROXY="$PROXY" python3 pull-latest.py` 将它传入进程。`BASE_URL`、`EXTRACT_DIR`、`CACHE_DIR` 可通过环境变量覆盖；缓存默认在部署根目录的 `.download-cache`，不依赖 cron 的当前目录。
+
+脚本对下载使用 HTTP 错误检查、重试、禁止缓存请求头与唯一查询参数；在 `latest` 的 ZIP/SHA 短暂不一致时，最多重新获取三组。缓存 ZIP 校验成功后仍会检查 **实际部署文件的清单和内容**，因此缓存已新而目录仍旧、静态资源缺失或损坏都能修复。
+
+新包先在同一文件系统的临时目录完成完整性检查和解压，再将旧 `dist` 改名为 `.dist-previous` 并切换新目录。目录切换失败会恢复旧版；若进程被中断导致 `dist` 缺失，下次启动先恢复备份。普通目录的两次改名之间有很短的切换窗口，不是严格的原子切换。历次备份保留为 `.dist-backup-*`，按服务器磁盘容量自行清理。脚本不会自动改动符号链接形式的部署目录。
+
+更新进程通过文件锁避免重叠执行；下载、校验、解压失败会保留已部署版本并以非零状态退出。远程包比已部署版本旧时默认拒绝降级；明确回退历史版本时才设置 `ALLOW_DOWNGRADE=1`。成功日志打印版本、提交、SHA256 和实际部署路径。
+
+服务器仍显示旧版时，先核对磁盘上的版本：
+
+```sh
+cat /data/app/zhongguose/dist/release.json
+```
+
+若磁盘已是新版而网页仍旧，检查 Web 服务实际根目录、Docker 挂载目录和 CDN/浏览器缓存。Nginx 的 `index.html`、`release.json` 应重新验证缓存，例如 `Cache-Control: no-cache`；带内容哈希的 `assets/` 可长期缓存。这些服务配置需要结合服务器现状设置，脚本不修改 Nginx 或 CDN。

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { packageServerRelease } from '../scripts/server-package.mjs';
@@ -46,14 +46,37 @@ function inspectZip(directory, content) {
   const output = join(directory, 'inspection.json');
   const script = join(directory, 'inspect.py');
   writeFileSync(input, content);
-  writeFileSync(script, `import json, sys, zipfile
+  writeFileSync(script, `import json, struct, sys, zipfile
 from pathlib import Path
-with zipfile.ZipFile(sys.argv[1]) as archive:
-    result = [dict(name=e.filename, time=e.date_time, mode=(e.external_attr >> 16) & 0o777, extra=e.extra.hex(), content=archive.read(e).decode('utf-8')) for e in archive.infolist()]
+with zipfile.ZipFile(sys.argv[1]) as archive, open(sys.argv[1], 'rb') as raw:
+    result = []
+    for e in archive.infolist():
+        raw.seek(e.header_offset + 26)
+        name_length, extra_length = struct.unpack('<HH', raw.read(4))
+        raw.seek(name_length, 1)
+        local_extra = raw.read(extra_length)
+        result.append(dict(name=e.filename, time=e.date_time, mode=(e.external_attr >> 16) & 0o777, extra=e.extra.hex(), localExtra=local_extra.hex(), content=archive.read(e).decode('utf-8')))
 Path(sys.argv[2]).write_text(json.dumps(result), encoding='utf-8')
 `);
   execFileSync('python3', [script, input, output], { stdio: 'inherit' });
   return JSON.parse(readFileSync(output, 'utf8'));
+}
+
+function utTimestamp(extraHex) {
+  const extra = Buffer.from(extraHex, 'hex');
+  assert.equal(extra.length, 9);
+  assert.equal(extra.readUInt16LE(0), 0x5455);
+  assert.equal(extra.readUInt16LE(2), 5);
+  assert.equal(extra[4], 1, 'UT flags should include only modification time');
+  return extra.readUInt32LE(5);
+}
+
+function extractedMtime(directory, content, label, timeZone) {
+  const archive = join(directory, `${label}.zip`);
+  const destination = join(directory, `extracted-${label}`);
+  writeFileSync(archive, content);
+  execFileSync('unzip', ['-q', archive, '-d', destination], { stdio: 'inherit', env: { ...process.env, TZ: timeZone } });
+  return statSync(join(destination, 'dist/index.html')).mtimeMs / 1000;
 }
 
 function options(directory, sourceZip, extra = {}) {
@@ -79,6 +102,7 @@ test('server archive has one dist wrapper, correct contents, and a standard chec
     assert.deepEqual(entry.time, [1980, 1, 1, 0, 0, 0]);
     assert.equal(entry.mode, entry.name.endsWith('/') ? 0o755 : 0o644);
     assert.equal(entry.extra, '');
+    assert.equal(entry.localExtra, '');
   }
   assert.equal(assets[1].content.toString(), `${checksum(assets[0].content)}  dist-vlatest.zip\n`);
   for (const asset of assets) assert.deepEqual(readFileSync(join(directory, 'release', asset.name)), asset.content);
@@ -93,6 +117,79 @@ test('repeated packaging and equivalent sources with different order or metadata
   const normalized = packageServerRelease(options(directory, reordered));
   assert.deepEqual(rerun, first);
   assert.deepEqual(normalized, first);
+});
+
+test('published server archives are reproducible and preserve release metadata independently of timestamps', t => {
+  const directory = workspace(t);
+  const source = makeZip(directory, site);
+  const settings = { expectedVersion: '1.2.3', expectedCommit: commit, publishedAt: '2026-11-18T06:07:11.987Z' };
+  const first = packageServerRelease(options(directory, source, settings));
+  const second = packageServerRelease(options(directory, source, settings));
+  const sameSecond = packageServerRelease(options(directory, source, { ...settings, publishedAt: '2026-11-18T06:07:11.001Z' }));
+  assert.deepEqual(second, first);
+  assert.deepEqual(sameSecond, first, 'subsecond differences must not change the archive');
+  const metadata = inspectZip(directory, first[0].content).find(entry => entry.name === 'dist/release.json');
+  assert.equal(metadata.content, site.find(entry => entry.name === 'release.json').content);
+});
+
+test('every published ZIP entry has a UTC DOS date and second-precision UT timestamps in both headers', t => {
+  const directory = workspace(t);
+  const source = makeZip(directory, site);
+  const publishedAt = '2026-11-18T06:07:11.987Z';
+  const assets = packageServerRelease(options(directory, source, { publishedAt }));
+  const expectedTimestamp = Math.floor(Date.parse(publishedAt) / 1000);
+  for (const entry of inspectZip(directory, assets[0].content)) {
+    // The DOS header truncates odd seconds; the UT field retains the exact second.
+    assert.deepEqual(entry.time, [2026, 11, 18, 6, 7, 10]);
+    assert.equal(utTimestamp(entry.extra), expectedTimestamp);
+    assert.equal(utTimestamp(entry.localExtra), expectedTimestamp);
+  }
+  const sameInstant = packageServerRelease(options(directory, source, { publishedAt: '2026-11-18T14:07:11.987+08:00' }));
+  assert.deepEqual(sameInstant, assets);
+  assert.equal(extractedMtime(directory, assets[0].content, 'utc', 'UTC'), expectedTimestamp);
+  assert.equal(extractedMtime(directory, assets[0].content, 'shanghai', 'Asia/Shanghai'), expectedTimestamp);
+});
+
+test('same-size changed HTML gets a different extracted mtime when the published second changes', t => {
+  const directory = workspace(t);
+  const older = site.map(entry => entry.name === 'index.html' ? { ...entry, content: entry.content + '<!-- A -->' } : entry);
+  const newer = site.map(entry => entry.name === 'index.html' ? { ...entry, content: entry.content + '<!-- B -->' } : entry);
+  assert.equal(Buffer.byteLength(older[0].content), Buffer.byteLength(newer[0].content));
+  assert.notEqual(checksum(Buffer.from(older[0].content)), checksum(Buffer.from(newer[0].content)));
+  const beforeTime = '2026-11-18T06:07:10Z';
+  const afterTime = '2026-11-18T06:07:11Z';
+  const before = packageServerRelease(options(directory, makeZip(directory, older, '-older'), { publishedAt: beforeTime }));
+  const after = packageServerRelease(options(directory, makeZip(directory, newer, '-newer'), { publishedAt: afterTime }));
+  const oldMtime = extractedMtime(directory, before[0].content, 'before', 'Asia/Shanghai');
+  const newMtime = extractedMtime(directory, after[0].content, 'after', 'Asia/Shanghai');
+  assert.equal(oldMtime, Date.parse(beforeTime) / 1000);
+  assert.equal(newMtime, Date.parse(afterTime) / 1000);
+  assert.equal(newMtime - oldMtime, 1, 'even releases in one DOS two-second interval need distinct mtimes');
+});
+
+test('invalid, ambiguous, and unrepresentable publication dates are rejected', t => {
+  const directory = workspace(t);
+  const source = makeZip(directory, site);
+  for (const publishedAt of [
+    null, 0, '', 'not-a-date', '2026-11-18', '2026-11-18T06:07:11',
+    '2026-02-30T06:07:11Z', '2026-13-01T00:00:00Z', '2026-11-18T24:00:00Z',
+    '1979-12-31T23:59:59Z', '2108-01-01T00:00:00Z',
+    '2106-02-07T06:28:16Z', '2107-01-01T00:00:00Z',
+  ]) {
+    assert.throws(() => packageServerRelease(options(directory, source, { publishedAt })), /publishedAt/);
+  }
+});
+
+test('the earliest DOS date and latest unsigned UT second are representable without overflow', t => {
+  const directory = workspace(t);
+  const source = makeZip(directory, site);
+  for (const publishedAt of ['1980-01-01T00:00:00Z', '2106-02-07T06:28:15Z']) {
+    const assets = packageServerRelease(options(directory, source, { publishedAt }));
+    for (const entry of inspectZip(directory, assets[0].content)) {
+      assert.equal(utTimestamp(entry.extra), Date.parse(publishedAt) / 1000);
+      assert.equal(utTimestamp(entry.localExtra), Date.parse(publishedAt) / 1000);
+    }
+  }
 });
 
 test('the named source must have exactly one matching and correct SHA-256 entry', t => {

@@ -30,6 +30,7 @@ function stable(tag = 'v1.0.0', commit = oldSha, id = 10) {
     commit,
     release: {
       id, tag_name: tag, draft: false, prerelease: false,
+      published_at: '2026-11-18T00:40:43Z',
       html_url: `https://github.example/${repository}/releases/tag/${tag}`,
       assets: [
         { id: id * 10 + 1, name: zipName, size: zip.length, url: `https://api.example/assets/${id * 10 + 1}` },
@@ -205,7 +206,8 @@ test('first publication creates a latest draft, uploads ZIP then SHA, and keeps 
   assert.deepEqual(server.state.tags.get('latest'), { type: 'commit', sha: source.commit });
   assert.deepEqual(calls, [{
     sourceZip: source.bytes[0], sourceChecksums: source.bytes[1].toString('utf8'),
-    sourceZipName: 'zhongguose-v1.0.0.zip', expectedVersion: '1.0.0', expectedCommit: source.commit, outDir: '/fake/latest-output',
+    sourceZipName: 'zhongguose-v1.0.0.zip', expectedVersion: '1.0.0', expectedCommit: source.commit,
+    publishedAt: source.release.published_at, outDir: '/fake/latest-output',
   }]);
   const releaseWrites = mutations(server.state).filter(event => event.path === `${repoPath}/releases` || event.path === `${repoPath}/releases/${rollingRelease(server.state).id}`);
   assert.equal(releaseWrites.length, 2);
@@ -403,6 +405,17 @@ test('the current release must be a stable published version rather than latest,
     Object.assign(server.state.releases[0], change);
     const { calls, packager } = createPackager();
     await assert.rejects(publish(server, packager), /GitHub latest must identify a published stable/);
+    assert.equal(calls.length, 0);
+    assert.deepEqual(mutations(server.state), []);
+  }
+});
+
+test('missing or invalid publication time is rejected before changing server assets', async () => {
+  for (const published_at of [undefined, null, 'invalid-date']) {
+    const server = createServer();
+    server.state.releases[0].published_at = published_at;
+    const { calls, packager } = createPackager();
+    await assert.rejects(publish(server, packager), /valid publication time/);
     assert.equal(calls.length, 0);
     assert.deepEqual(mutations(server.state), []);
   }

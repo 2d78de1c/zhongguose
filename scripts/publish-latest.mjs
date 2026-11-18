@@ -30,6 +30,9 @@ async function stableRelease(client, path) {
   if (release.draft || release.prerelease || !parseVersion(release.tag_name)) {
     throw new Error('GitHub latest must identify a published stable vX.Y.Z release, not the rolling latest tag');
   }
+  if (typeof release.published_at !== 'string' || !Number.isFinite(Date.parse(release.published_at))) {
+    throw new Error('Stable release must include a valid publication time for server cache validators');
+  }
   return release;
 }
 
@@ -70,7 +73,7 @@ export async function publishLatest({ client, repository, outDir = 'release/late
     commitSha = await commitForTag(client, path, source.tag_name);
     const zipBytes = await client.download(sourceZip);
     const checksumBytes = await client.download(checksums);
-    assets = packager({ sourceZip: zipBytes, sourceChecksums: checksumBytes.toString('utf8'), sourceZipName: zipName, expectedVersion: source.tag_name.slice(1), expectedCommit: commitSha, outDir });
+    assets = packager({ sourceZip: zipBytes, sourceChecksums: checksumBytes.toString('utf8'), sourceZipName: zipName, expectedVersion: source.tag_name.slice(1), expectedCommit: commitSha, publishedAt: source.published_at, outDir });
     const current = await stableRelease(client, path);
     if (current.id === source.id && current.tag_name === source.tag_name) break;
     assets = null;

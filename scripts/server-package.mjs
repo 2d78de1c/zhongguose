@@ -10,13 +10,18 @@ const sha256 = content => createHash('sha256').update(content).digest('hex');
 // zipfile is part of Python's standard library. Repack directly from validated
 // entries instead of extracting paths supplied by an archive onto the filesystem.
 const REPACK = String.raw`
-import json, re, shutil, stat, sys, zipfile
+import datetime, json, re, shutil, stat, struct, sys, zipfile
 from pathlib import Path
 
-source_path, output_path, expected_path, error_path = sys.argv[1:]
+source_path, output_path, parameters_path, error_path = sys.argv[1:]
 
 def package():
-    expected = json.loads(Path(expected_path).read_text(encoding='utf-8'))
+    parameters = json.loads(Path(parameters_path).read_text(encoding='utf-8'))
+    expected, timestamp = parameters['expected'], parameters['timestamp']
+    date_time = (1980, 1, 1, 0, 0, 0) if timestamp is None else datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).timetuple()[:6]
+    # DOS dates have no time zone and only two-second precision. Info-ZIP uses
+    # the standard UT extra field to restore the exact UTC modification time.
+    extra = b'' if timestamp is None else struct.pack('<HHBI', 0x5455, 5, 1, timestamp)
     with zipfile.ZipFile(source_path) as source:
         entries = {}
         directories = {'dist'}
@@ -70,11 +75,11 @@ def package():
                     raise ValueError('release.json ' + key + ' does not match the expected release')
 
         def info(name, directory):
-            value = zipfile.ZipInfo(name, date_time=(1980, 1, 1, 0, 0, 0))
+            value = zipfile.ZipInfo(name, date_time=date_time)
             value.create_system = 3
             value.external_attr = ((stat.S_IFDIR | 0o755) << 16 | 0x10) if directory else ((stat.S_IFREG | 0o644) << 16)
             value.compress_type = zipfile.ZIP_STORED if directory else zipfile.ZIP_DEFLATED
-            value.extra = b''
+            value.extra = extra
             value.comment = b''
             return value
 
@@ -104,6 +109,7 @@ export function packageServerRelease({
   outDir,
   expectedVersion,
   expectedCommit,
+  publishedAt,
 }) {
   if (!Buffer.isBuffer(sourceZip)) throw new TypeError('sourceZip must be a Buffer');
   if (typeof sourceChecksums !== 'string') throw new TypeError('sourceChecksums must be a string');
@@ -119,6 +125,24 @@ export function packageServerRelease({
     }
   }
 
+  let timestamp = null;
+  if (publishedAt !== undefined) {
+    // Require an explicit time zone and reject dates Date.parse would normalize
+    // (for example February 30) instead of silently publishing the wrong mtime.
+    const match = typeof publishedAt === 'string'
+      && /^(\d{4}-\d{2}-\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/.exec(publishedAt);
+    const calendarDate = match ? new Date(`${match[1]}T00:00:00Z`) : null;
+    const milliseconds = match ? Date.parse(publishedAt) : NaN;
+    if (!Number.isFinite(milliseconds) || !Number.isFinite(calendarDate?.getTime()) || calendarDate.toISOString().slice(0, 10) !== match[1]) {
+      throw new TypeError('publishedAt must be a valid ISO timestamp with an explicit time zone');
+    }
+    const year = new Date(milliseconds).getUTCFullYear();
+    if (year < 1980 || year > 2107) throw new RangeError('publishedAt must fall within ZIP years 1980 through 2107');
+    timestamp = Math.floor(milliseconds / 1000);
+    // UT stores an unsigned 32-bit Unix timestamp, a stricter upper bound than DOS.
+    if (timestamp > 0xffffffff) throw new RangeError('publishedAt exceeds the UT timestamp limit of 2106-02-07T06:28:15Z');
+  }
+
   const matching = sourceChecksums.split(/\r?\n/).flatMap(line => {
     const match = /^([\da-fA-F]{64}) [ *](.+)$/.exec(line);
     return match && match[2] === sourceZipName ? [match[1].toLowerCase()] : [];
@@ -131,11 +155,11 @@ export function packageServerRelease({
     const input = join(temporary, 'source.zip');
     const output = join(temporary, ZIP_NAME);
     const script = join(temporary, 'repack.py');
-    const metadata = join(temporary, 'expected.json');
+    const metadata = join(temporary, 'parameters.json');
     const errors = join(temporary, 'error.txt');
     writeFileSync(input, sourceZip);
     writeFileSync(script, REPACK);
-    writeFileSync(metadata, JSON.stringify(expected));
+    writeFileSync(metadata, JSON.stringify({ expected, timestamp }));
     try {
       execFileSync('python3', [script, input, output, metadata, errors], { stdio: 'inherit', timeout: 60000 });
     } catch (cause) {
